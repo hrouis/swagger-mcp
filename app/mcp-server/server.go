@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
 	"github.com/danishjsheikh/swagger-mcp/app/models"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -269,9 +268,15 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 
 			toolOption = append(toolOption, mcp.WithDescription(fmt.Sprintf(`Use this tool only when the request exactly matches %s or %s. If you dont have any of the required parameters then always ask user for it, *Dont fill any paramter on your own or keep it empty*. If there is [Error], only state that error in your reponse and stop the reponse there itself. *Do not ever maintain records in your memory for eg list of users or orders*`,
 				details.Summary, details.Description)))
+			
+			pathWithoutDot := strings.ReplaceAll(path, "/", "_")
+			
+			toolName := fmt.Sprintf("%s_%s", method, strings.ReplaceAll(strings.ReplaceAll(pathWithoutDot, "}", ""), "{", ""))
 
-			toolName := fmt.Sprintf("%s_%s", method, strings.ReplaceAll(strings.ReplaceAll(path, "}", ""), "{", ""))
-
+			if(len(toolName) >= 40) {
+				toolName = toolName[:40]
+				
+			}
 			mcpServer.AddTool(
 				mcp.NewTool(toolName, toolOption...),
 				CreateMCPToolHandler(
