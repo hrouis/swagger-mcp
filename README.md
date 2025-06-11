@@ -24,7 +24,7 @@ To use `swagger-mcp`, ensure you have the following dependencies:
 Follow these steps to install and run `swagger-mcp`:
 
 ```sh
-go install github.com/danishjsheikh/swagger-mcp@latest
+go install github.com/hrouis/swagger-mcp@latest
 swagger-mcp
 ```
 
@@ -63,7 +63,7 @@ To integrate with `mcphost`, include the following configuration in `.mcp.json`:
 ## Demo Flow
 1. Some Backend:
     ```sh
-    go install github.com/danishjsheikh/go-backend-demo@latest 
+    go install github.com/hrouis/go-backend-demo@latest 
     go-backend-demo
     ```
 
@@ -79,7 +79,7 @@ To integrate with `mcphost`, include the following configuration in `.mcp.json`:
     ```
 
 ## Flow Diagram
-![Flow Diagram](https://raw.githubusercontent.com/danishjsheikh/swagger-mcp/refs/heads/main/swagger_mcp_flow_diagram.png)
+![Flow Diagram](https://raw.githubusercontent.com/hrouis/swagger-mcp/refs/heads/main/swagger_mcp_flow_diagram.png)
 
 ## 🛠️ Need Help  
 I am working on **improving tool definitions** to enhance:  

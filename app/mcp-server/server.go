@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"github.com/danishjsheikh/swagger-mcp/app/models"
+	"github.com/hrouis/swagger-mcp/app/models"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
