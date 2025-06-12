@@ -38,6 +38,7 @@ type Endpoint struct {
 	Summary     string              `json:"summary"`
 	Description string              `json:"description"`
 	Parameters  []Parameter         `json:"parameters"`
+	RequestBody *RequestBody         `json:"requestBody"`
 	Responses   map[string]Response `json:"responses"`
 	Consumes    []string            `json:"consumes"`
 	Produces    []string            `json:"produces"`
@@ -52,6 +53,18 @@ type Parameter struct {
 	Description string     `json:"description"`
 }
 
+type RequestBody struct {
+	Description string               `json:"description,omitempty"`
+	Required    bool                 `json:"required,omitempty"`
+	Content     map[string]MediaType `json:"content"`
+}
+
+type MediaType struct {
+	Schema   *SchemaRef             `json:"schema,omitempty"`
+	Example  interface{}            `json:"example,omitempty"`
+	Examples map[string]interface{} `json:"examples,omitempty"`
+}
+
 type Response struct {
 	Description string     `json:"description"`
 	Schema      *SchemaRef `json:"schema,omitempty"`
@@ -59,8 +72,14 @@ type Response struct {
 }
 
 type SchemaRef struct {
-	Ref  string `json:"$ref,omitempty"`
-	Type string `json:"type,omitempty"`
+	Type        string                `json:"type,omitempty"`
+	Format      string                `json:"format,omitempty"`
+	Properties  map[string]*SchemaRef `json:"properties,omitempty"`
+	Required    []string              `json:"required,omitempty"`
+	Items       *SchemaRef            `json:"items,omitempty"`
+	Ref         string                `json:"$ref,omitempty"`
+	Description string                `json:"description,omitempty"`
+	Example     interface{}           `json:"example,omitempty"`
 }
 
 // SseConfig stores SSE (Server-Sent Events) related parameters

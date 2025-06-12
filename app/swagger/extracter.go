@@ -20,7 +20,7 @@ func getBaseURL(swaggerSpec models.SwaggerSpec) string {
 	if swaggerSpec.OpenAPI != "" && len(swaggerSpec.Servers) > 0 {
 		return strings.TrimSuffix(swaggerSpec.Servers[0].URL, "/")
 	}
-	
+
 	// For Swagger 2.0
 	baseURL := swaggerSpec.Host
 	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
@@ -34,7 +34,7 @@ func getBaseURL(swaggerSpec models.SwaggerSpec) string {
 
 func ExtractSwagger(swaggerSpec models.SwaggerSpec) {
 	baseURL := getBaseURL(swaggerSpec)
-	
+
 	for path, methods := range swaggerSpec.Paths {
 		for method, details := range methods {
 			fullURL := strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(path, "/")
@@ -42,14 +42,14 @@ func ExtractSwagger(swaggerSpec models.SwaggerSpec) {
 			fmt.Printf("Method: %s\n", strings.ToUpper(method))
 			fmt.Printf("Summary: %s\n", details.Summary)
 			fmt.Printf("Description: %s\n", details.Description)
-			
+
 			fmt.Println("\nHeaders:")
 			for _, param := range details.Parameters {
 				if param.In == "header" {
 					fmt.Printf("  - %s (Required: %t)\n", param.Name, param.Required)
 				}
 			}
-			
+
 			fmt.Println("\nPath Parameters:")
 			for _, param := range details.Parameters {
 				if param.In == "path" {
@@ -65,7 +65,7 @@ func ExtractSwagger(swaggerSpec models.SwaggerSpec) {
 				if param.In == "body" {
 					schemaName := ExtractSchemaName(param.Schema.Ref, param.Type)
 					fmt.Printf("  Schema: %s\n", schemaName)
-					if definition, found := swaggerSpec.Definitions[schemaName]; found {
+					if definition, found := swaggerSpec.Components.Schemas[schemaName]; found {
 						for propName, prop := range definition.Properties {
 							fmt.Printf("    - %s: %s\n", propName, prop.Type)
 						}
@@ -74,13 +74,36 @@ func ExtractSwagger(swaggerSpec models.SwaggerSpec) {
 					}
 				}
 			}
-			
+
+			// Parse requestBody
+			if details.RequestBody != nil {
+				for contentType, mediaType := range details.RequestBody.Content {
+					fmt.Printf("  content type: %s\n", contentType)
+					schemaName := ExtractSchemaName(mediaType.Schema.Ref, mediaType.Schema.Type)
+					fmt.Printf("  Schema: %s\n", schemaName)
+					if definition, found := swaggerSpec.Components.Schemas[schemaName]; found {
+						for propName, prop := range definition.Properties {
+							fmt.Printf("    - %s: %s\n", propName, prop.Type)
+						}
+						for propName, schemaProp := range mediaType.Schema.Properties {
+							fmt.Printf("    - %s: %s\n", propName, schemaProp.Type)
+							items := schemaProp.Items
+							for propName, prop := range items.Properties {
+								fmt.Printf("    - %s: %s\n", propName, prop.Type)
+							}
+						}
+					} else if schemaName != "" {
+						fmt.Printf("    Type: %s\n", schemaName)
+					}
+				}
+			}
+
 			fmt.Println("\nResponse Body:")
 			for status, resp := range details.Responses {
 				fmt.Printf("  Status %s:\n", status)
 				if resp.Schema != nil {
 					schemaName := ExtractSchemaName(resp.Schema.Ref, resp.Schema.Type)
-					if definition, found := swaggerSpec.Definitions[schemaName]; found {
+					if definition, found := swaggerSpec.Components.Schemas[schemaName]; found {
 						fmt.Printf("    Schema: %s\n", schemaName)
 						for propName, prop := range definition.Properties {
 							fmt.Printf("      - %s: %s\n", propName, prop.Type)

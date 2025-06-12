@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
 	"github.com/hrouis/swagger-mcp/app/models"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -182,7 +183,7 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 			reqURL = strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(path, "/")
 
 			reqMethod := fmt.Sprint(method)
-			reqBody := make(map[string]string)
+			reqBody := make(map[string]interface{})
 			reqPathParam := []string{}
 			reqQueryParam := []string{}
 			reqHeader := []string{}
@@ -254,6 +255,38 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 					}
 				}
 			}
+			if details.RequestBody != nil {
+				for contentType, mediaType := range details.RequestBody.Content {
+					fmt.Printf("  content type: %s\n", contentType)
+					schemaName := ExtractSchemaName(mediaType.Schema.Ref, mediaType.Schema.Type)
+					fmt.Printf("  Schema: %s\n", schemaName)
+					if definition, found := swaggerSpec.Components.Schemas[schemaName]; found {
+						for propName, prop := range definition.Properties {
+							fmt.Printf("    - %s: %s\n", propName, prop.Type)
+
+							if prop.Type == "array" {
+								schemaProp := mediaType.Schema.Properties[schemaName]
+								if schemaProp != nil {
+									items := schemaProp.Items
+									for propName, prop := range items.Properties {
+										toolOption = append(toolOption, mcp.WithString(
+											fmt.Sprint(propName),
+											mcp.Description(fmt.Sprintf("The item  for %s, it should be in format of %s", propName, prop.Type)),
+											mcp.Required(),
+										))
+									}
+								}
+							}
+							toolOption = append(toolOption, mcp.WithString(
+								fmt.Sprint(propName),
+								mcp.Description(fmt.Sprintf("The data for %s, it should be in format of %s", propName, prop.Type)),
+								mcp.Required(),
+							))
+							reqBody[propName] = prop.Type
+						}
+					}
+				}
+			}
 			for status, resp := range details.Responses {
 				if resp.Schema != nil {
 					schemaName := ExtractSchemaName(resp.Schema.Ref, resp.Schema.Type)
@@ -268,14 +301,14 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 
 			toolOption = append(toolOption, mcp.WithDescription(fmt.Sprintf(`Use this tool only when the request exactly matches %s or %s. If you dont have any of the required parameters then always ask user for it, *Dont fill any paramter on your own or keep it empty*. If there is [Error], only state that error in your reponse and stop the reponse there itself. *Do not ever maintain records in your memory for eg list of users or orders*`,
 				details.Summary, details.Description)))
-			
+
 			pathWithoutDot := strings.ReplaceAll(path, "/", "_")
-			
+
 			toolName := fmt.Sprintf("%s_%s", method, strings.ReplaceAll(strings.ReplaceAll(pathWithoutDot, "}", ""), "{", ""))
 
-			if(len(toolName) >= 40) {
+			if len(toolName) >= 40 {
 				toolName = toolName[:40]
-				
+
 			}
 			mcpServer.AddTool(
 				mcp.NewTool(toolName, toolOption...),
@@ -353,7 +386,7 @@ func CreateMCPToolHandler(
 	reqPathParam []string,
 	reqQueryParam []string,
 	reqURL string,
-	reqBody map[string]string,
+	reqBody map[string]any,
 	reqMethod string,
 	reqHeader []string,
 	apiCfg models.ApiConfig,
